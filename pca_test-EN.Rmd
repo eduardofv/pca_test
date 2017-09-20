@@ -1,0 +1,85 @@
+---
+title: "pca test"
+author: "Eduardo Flores"
+date: "9/14/2017"
+output: html_document
+---
+
+# Question: When transforming vectors to their Principal Components, are their relations preserved?
+
+We have a set of vectors. After performing [Principal Component Analysis (PCA)](https://en.wikipedia.org/wiki/Principal_component_analysis) we now use the "rotated" vectors to perform analysis. **Can we be confident that the original relations (cosine similarity between vectors) are preserved on the new vector space?**
+
+```{r setup}
+knitr::opts_chunk$set(echo = TRUE)
+set.seed(1234)
+#Cosine Similarity
+cos.sim <- function(A,B) 
+{
+  return( sum(A*B)/sqrt(sum(A^2)*sum(B^2)) )
+}   
+```
+### 1 - Generate a test set y=x+err
+
+```{r}
+#"noisy" x=y
+x = runif(n = 1000,min=-100,max=100) # x has a uniform distribution
+y = x + rnorm(n=1000,mean=0,sd=20) # y has a normal distribution
+
+d <- data.frame(x=x,y=y)
+#ver primeros puntos
+head(d)
+plot(d)
+```
+
+### 2 - Perform PCA
+```{r}
+pca <- prcomp(d,center = F,scale. = F)
+summary(pca)
+pca$rotation
+dt <- pca$x #d transformed
+head(dt)
+plot(dt)
+```
+
+### 3 - For a given vector, calculate it's relation (cosine similarity) to all the others in both spaces
+```{r}
+a <- d[2,] #choose a point on the original space
+s<-apply(d,1,function(x) cos.sim(a,x)) #calculate the angles to all the other vectors
+at <- dt[2,] #get the same point in the new space
+st<-apply(dt,1,function(x) cos.sim(at,x)) #calculate the angles in the new space
+```
+#### The angles are the same
+```{r}
+head(data.frame(s=s,st=st))
+```
+#### Check closest points are the same
+```{r}
+head(data.frame(s=order(s,decreasing = T),st=order(st,decreasing = T)))
+```
+
+# Answer: YES
+
+### 4 - Bonus: magnitudes are also the same
+
+```{r}
+magd <- sqrt(rowSums(d*d))
+magdt <- sqrt(rowSums(dt*dt))
+
+head(data.frame(magd=magd,magdt=magdt))
+```
+
+### 5 - Bonus: you can retreive the distributions 
+
+```{r}
+hist(as.data.frame(dt)$PC1) #this is close to uniform
+hist(as.data.frame(dt)$PC2) #this is close to normal
+```
+
+### Looks closer than the original x,y
+
+```{r}
+hist(d$x)
+hist(d$y)
+```
+
+

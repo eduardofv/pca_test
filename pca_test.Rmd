@@ -1,0 +1,76 @@
+---
+title: "pca test"
+author: "Eduardo Flores"
+date: "9/14/2017"
+output: html_document
+---
+
+# ¿Al transformar vectores a sus componentes principales se conservan sus relaciones?
+
+```{r setup}
+knitr::opts_chunk$set(echo = TRUE)
+
+#Cosine Similarity
+cos.sim <- function(A,B) 
+{
+  return( sum(A*B)/sqrt(sum(A^2)*sum(B^2)) )
+}   
+```
+### 1 - Generar un conjunto de prueba y=x+err
+
+```{r}
+#noisy x=y
+x = runif(n = 100,min=-100,max=100)
+y = x + rnorm(n=100,mean=0,sd=20)
+
+d <- data.frame(x=x,y=y)
+#ver primeros puntos
+head(d)
+plot(d)
+```
+
+### 2 - Calcular PCA
+```{r}
+pca <- prcomp(d,center = F,scale. = F)
+summary(pca)
+pca$rotation
+dt <- pca$x #d transformado
+head(dt)
+plot(dt)
+```
+
+### 3 - Calcular los ángulos entre un punto y todos los demas, en ambos espacios
+```{r}
+a <- d[2,] #escogemos un vector en el espacio original
+s<-apply(d,1,function(x) cos.sim(a,x)) #calculamos los angulos respecto a todos
+at <- dt[2,] #escogemos el mismo punto en el espacio transformado
+st<-apply(dt,1,function(x) cos.sim(at,x)) #calculamos los angulos
+```
+#### Los angulos son los mismos
+```{r}
+head(data.frame(s=s,st=st))
+```
+#### Ordenamos por los mas similares, son los mismos
+```{r}
+head(data.frame(s=order(s,decreasing = T),st=order(st,decreasing = T)))
+```
+
+# Respuesta, SÍ
+
+### 4 - Bonus: las magnitudes también son iguales
+
+```{r}
+magd <- sqrt(rowSums(d*d))
+magdt <- sqrt(rowSums(dt*dt))
+
+head(data.frame(magd=magd,magdt=magdt))
+```
+
+### 5 - Bonus: Se obtienen las distribuciones originales
+
+```{r}
+hist(as.data.frame(dt)$PC1)
+hist(as.data.frame(dt)$PC2)
+```
+
+
